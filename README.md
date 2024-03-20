@@ -202,26 +202,6 @@ The `<berkeley-room-designer-root>/build-utils/data/berkeley.db` sqlite database
 
 ----
 
-## Known Issues
-> These need to be moved to Github once this is pushed as a sample.
-
-1. Editing saved room configurations either results in Mesh for listing not found error, or room configuration is duplicated on load.
-1. Saving room configurations after editing doesn't work.
-1. Some listings aren't scaled properly in the dataset.
-1. Importing ts-matrix in `<berkeley-room-designer-root>/src/frontend/furniture-placement/vectors.ts` requires changing how it's imported if run via CLI vs bundling for web, but only sometimes?
-1. Live reload not working in local development after changes are made. Webpack was used as the local http server for range request support as a fallback to other local http servers, so it's being used in a way that breaks this functionality.
-1. Mesh becomes less visible sometimes (after adding a listing to room manually after search) and shouldn't.
-1. Mesh interaction via mouse (gizmos and raycast) is broken. Has something to do with GLB import (we think), commented out for now.
-1. Reset listing position broken and button hidden (useful for when importing a room configuration and resetting to its original position).
-1. sqlite-wasm-http integration works but is not ideal.
-1. sqlite-wasm-http range requests are extremely slow when served through CloudFront - need to adjust cache settings. See: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/RangeGETs.html 
-1. All furniture placement algorithms need some work; autointeriorblog and random need to properly place furniture on walls/ceilings, and while autointeriorblog supports doors/windows, that information is not passed to it.
-1. Room object snapping/locking/overlap detection is missing. Currently just using 6" move increments and not doing anything if objects overlap.
-1. Globals (for frontend and backend and CLI) were tricky and every suggestion we came across didn't work...would be nice to have 1 globals file instead of 2.
-1. Lit web components took a lot of work to make them function how we would expect!
-
-----
-
 ## Runbook
 ### SQLite
 If you have sqlite installed locally you can debug the .db file generated from the dataset. From a terminal, run:
