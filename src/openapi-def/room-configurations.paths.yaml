@@ -1,0 +1,18 @@
+/room-configuration:
+  post:
+    operationId: generateRoomConfiguration
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $includes: 
+              - ./room-creation-params.schema.yaml
+    responses:
+      '201':
+        description: 'OK'
+        content:
+          application/json:
+            schema:
+              $includes: 
+                - ./jsend.schema.yaml

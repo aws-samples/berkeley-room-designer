@@ -1,0 +1,29 @@
+:root {
+
+}
+
+/* https://github.com/lit/lit/issues/574 */
+[hide] {
+  display: none;
+}
+
+body {
+  margin: 0;
+}
+
+.brd-modal-body-overflow-to-scroll {
+  height: 45vh;
+  overflow-y: scroll;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+ 
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+
+  }
+}

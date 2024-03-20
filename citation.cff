@@ -1,0 +1,121 @@
+# This file is responsible for citing referenced work and/or software used that is not an NPM package declared in a dependency file.
+# Not all of the software below is an application dependency, it's just relied upon to build, develop, or deploy the sample.
+# References:
+# * https://citation-file-format.github.io/
+# * https://github.com/citation-file-format/citation-file-format/blob/main/schema-guide.md#referencing-other-work
+# * https://github.com/citation-file-format/citation-file-format/blob/main/schema-guide.md#definitionsreferencetype
+# * https://github.com/citation-file-format/citation-file-format/blob/main/schema-guide.md#definitionsreferenceurl
+# * https://spdx.org/licenses/
+cff-version: 1.2.0
+title: "aws-labs/amazon-berkeley-room-designer"
+message: "When I wrote this code, only God and I understood what I did. Now only God knows."
+references:
+  # Dev software:
+  - type: software
+    title: "GNU Make"
+    license: GPL-3.0-only
+    url: "https://www.gnu.org/software/make"
+  - type: software
+    title: "CMake"
+    license: BSD-3-Clause
+    url: "https://cmake.org"
+  - type: software
+    title: "curl"
+    license: curl
+    url: "https://curl.se" 
+  - type: software
+    title: "Node.js"
+    license: MIT
+    url: "https://nodejs.org" 
+  - type: software
+    title: "jq"
+    license: MIT 
+    url: "https://jqlang.github.io/jq" 
+  - type: software
+    title: "unzip"
+    license: Info-ZIP
+    url: "https://infozip.sourceforge.net/UnZip.html" 
+
+  - type: software
+    title: "SQLite"
+    license: blessing 
+    url: "https://www.sqlite.org" 
+
+  - type: software
+    title: "node-canvas dependencies"
+    license: "Dependent on platform." 
+    url: "https://github.com/Automattic/node-canvas" 
+  - type: software
+    title: "AWS CLI"
+    license: Apache-2.0 
+    url: "https://github.com/aws/aws-cli"
+
+  - type: software
+    title: "Docker"
+    license-url: "https://www.docker.com/pricing" 
+    url: "https://www.docker.com"
+  - type: software
+    title: "Amazon Linux 2023"
+    license: CC-BY-NC-SA-4.0 
+    url: "https://github.com/amazonlinux/amazon-linux-2023" 
+
+  # Declared here because they're installed globally via NPM.
+  - type: software
+    title: "github:tsapporg/ts-npm#f1f6e4c6cead9ae5f8877f25da5ff85382079c5c"
+    license: MIT
+    url: "https://github.com/tsapporg/ts-npm/tree/aws-sample"
+  - type: software
+    title: "github:tsapporg/openapi-includer-cli#1bc75ecb3d37563008a36550560238adfdd11ba1"
+    license: MIT
+    url: "https://github.com/tsapporg/openapi-includer-cli/tree/aws-sample"
+
+  # Declared here because currently it's not included in .npm/npm*.ts / package.json files due to build issues.
+  - type: software
+    title: "github:mmomtchev/sqlite-wasm-http#aebdc1673edc2291636d2abf3d2a9c2bcb62e048"
+    license: ISC
+    url: "https://github.com/mmomtchev/sqlite-wasm-http"
+
+  # Referenced data:
+  - type: data 
+    title: "Amazon Berkeley Objects (ABO) Dataset"
+    license: CC-BY-4.0 
+    url: "https://amazon-berkeley-objects.s3.amazonaws.com/index.html"
+  
+  # When you want to turn this into a room designer with more objects from other datasets...
+  # - type: data
+  #   title: "SweetHome 3D 3D models"
+  #   license: FAL-1.3
+  #   url: "https://www.sweethome3d.com/importModels.jsp#ModelsLibraries"
+  # - type: data
+  #   title: "LucaPresidente 3D models"
+  #   license: FAL-1.3
+  #   url: "https://www.sweethome3d.com/importModels.jsp#ModelsLibraries"
+  # - type: data
+  #   title: "Scopia 3D models"
+  #   license: CC-BY-4.0
+  #   url: "https://www.sweethome3d.com/importModels.jsp#ModelsLibraries"
+  # - type: data
+  #   title: "KatorLegaz 3D models"
+  #   license: CC-BY-4.0
+  #   url: "https://www.sweethome3d.com/importModels.jsp#ModelsLibraries"
+  # - type: data
+  #   title: "BlendSwap 3D models - public domain "
+  #   license: CC0-1.0
+  #   url: "https://www.sweethome3d.com/importModels.jsp#ModelsLibraries"
+  # - type: data
+  #   title: "BlendSwap 3D models - CC-BY"
+  #   license: CC-BY-4.0
+  #   url: "https://www.sweethome3d.com/importModels.jsp#ModelsLibraries"
+  # - type: data
+  #   title: "Reallusion 3D models"
+  #   license: CC-BY-4.0
+  #   url: "https://www.sweethome3d.com/importModels.jsp#ModelsLibraries"
+
+  # Referenced blogs/algorithms/code:
+  - type: article
+    title: "autointeriorblog.wordpress.com"
+    url: "https://autointeriorblog.wordpress.com"
+  - type: software
+    title: "david-dot/FittingPlacer"
+    license: MIT
+    repository-code: "https://github.com/david-dot/FittingPlacer"

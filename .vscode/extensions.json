@@ -1,0 +1,6 @@
+{
+  "recommendations": [
+    "runem.lit-plugin",
+    "tamasfe.even-better-toml"
+  ]
+}

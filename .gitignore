@@ -1,0 +1,25 @@
+**.DS_Store
+
+**node_modules
+# ts-npm generates these. 
+package.json
+#package-lock.json
+
+dist*
+
+build-utils/data/listings_*.json
+build-utils/data/*.csv
+build-utils/renders/*.png
+
+src/backend/npm.ts
+src/backend/package.json
+src/backend/package-lock.json
+src/backend/node_modules
+
+**cdk.out
+**cdk.context.json
+
+# This was added for our use of .gitignore to zip ignore when zipping source dir for CICD:
+*node_modules*
+*cdk.out*
+*dist*

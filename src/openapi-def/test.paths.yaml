@@ -1,0 +1,11 @@
+/test:
+  get:
+    operationId: test
+    responses:
+      '200':
+        description: 'OK'
+        content:
+          application/json:
+            schema:
+              $includes: 
+                - ./jsend.schema.yaml

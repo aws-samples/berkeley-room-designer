@@ -1,0 +1,53 @@
+type: object
+properties:
+  id:
+    type: string
+  imported_room_configuration:
+    type: string
+  prompt:
+    type: string
+  name:
+    type: string
+  area_size_x:
+    type: number
+  area_size_z: 
+    type: number
+  objects: 
+    type: array
+    items:
+      type: object
+      properties:
+        id:
+          type: string
+        model_id:
+          type: string
+        model_location:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        color:
+          type: string
+        x:
+          type: number
+        y:
+          type: number
+        z:
+          type: number
+        orientation:
+          type: number
+    required:
+      - id
+      - name
+      - category
+      - color
+      - x
+      - "y"
+      - z
+      - orientation
+required:
+  - id
+  - area_size_x
+  - area_size_z
+  - objects

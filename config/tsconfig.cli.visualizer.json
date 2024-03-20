@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "../dist.cli.visualizer",
+    "rootDir": "../src/cli.visualizer",
+    "types": ["node"]
+  },
+  "include": ["../src/cli.visualizer/**/*.ts"]
+}

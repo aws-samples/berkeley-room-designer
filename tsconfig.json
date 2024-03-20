@@ -1,0 +1,6 @@
+// This file is responsible for nothing. It is a stub!
+// VS Code requires a TypeScript config file in the root folder of this source 
+//  and can not be configured otherwise (see https://github.com/microsoft/vscode/issues/12463). 
+{
+  "extends": "./config/tsconfig.base.json"
+}

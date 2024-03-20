@@ -1,0 +1,210 @@
+openapi: 3.0.1
+info:
+  title: API
+  version: 0.0.0
+servers:
+  - url: "{apiURL}"
+    variables:
+      apiURL:
+        default: http://localhost:8081/api
+paths:
+  /test:
+    get:
+      operationId: test
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    type: object
+                required:
+                  - status
+                  - message
+  /room-configuration:
+    post:
+      operationId: generateRoomConfiguration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                roomDescription:
+                  type: object
+                  properties:
+                    widthInMeters:
+                      type: number
+                    depthInMeters:
+                      type: number
+                    heightInMeters:
+                      type: number
+                    roomCategory:
+                      type: string
+                      enum:
+                        - living room
+                        - dining room
+                        - family room
+                        - office
+                        - bedroom
+                        - kitchen
+                        - conference room
+                        - generic
+                  required:
+                    - widthInMeters
+                    - depthInMeters
+                    - heightInMeters
+                    - roomCategory
+                fillTarget:
+                  type: number
+                furniturePlacementType:
+                  type: string
+                  enum:
+                    - llm
+                    - random
+                    - autointeriorblog
+                furnitureSelectionType:
+                  type: string
+                  enum:
+                    - random
+                    - matching search
+                furnitureSearchSelectionKeywords:
+                  type: array
+                  items:
+                    type: string
+              required:
+                - roomDescription
+                - fillTarget
+                - furniturePlacementType
+                - furnitureSelectionType
+      responses:
+        "201":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    type: object
+                required:
+                  - status
+                  - message
+components:
+  schemas:
+    IRoomCreationParams:
+      type: object
+      properties:
+        roomDescription:
+          type: object
+          properties:
+            widthInMeters:
+              type: number
+            depthInMeters:
+              type: number
+            heightInMeters:
+              type: number
+            roomCategory:
+              type: string
+              enum:
+                - living room
+                - dining room
+                - family room
+                - office
+                - bedroom
+                - kitchen
+                - conference room
+                - generic
+          required:
+            - widthInMeters
+            - depthInMeters
+            - heightInMeters
+            - roomCategory
+        fillTarget:
+          type: number
+        furniturePlacementType:
+          type: string
+          enum:
+            - llm
+            - random
+            - autointeriorblog
+        furnitureSelectionType:
+          type: string
+          enum:
+            - random
+            - matching search
+        furnitureSearchSelectionKeywords:
+          type: array
+          items:
+            type: string
+      required:
+        - roomDescription
+        - fillTarget
+        - furniturePlacementType
+        - furnitureSelectionType
+    IRoomConfiguration:
+      type: object
+      properties:
+        id:
+          type: string
+        imported_room_configuration:
+          type: string
+        prompt:
+          type: string
+        name:
+          type: string
+        area_size_x:
+          type: number
+        area_size_z:
+          type: number
+        objects:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              model_id:
+                type: string
+              model_location:
+                type: string
+              name:
+                type: string
+              category:
+                type: string
+              color:
+                type: string
+              x:
+                type: number
+              y:
+                type: number
+              z:
+                type: number
+              orientation:
+                type: number
+          required:
+            - id
+            - name
+            - category
+            - color
+            - x
+            - y
+            - z
+            - orientation
+      required:
+        - id
+        - area_size_x
+        - area_size_z
+        - objects

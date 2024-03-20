@@ -1,0 +1,14 @@
+# This file is responsible for defining Docker related developer commands.
+include makefile.inc
+
+dev_base_image := public.ecr.aws/docker/library/node:20-bookworm
+dev_runtime_image_name := berkeley-room-designer-runtime
+
+# On my M2 w/ Docker, node-gui had a similar issue to this when installing: https://github.com/nodegui/nodegui/issues/1004
+# So, we specified linux/amd64 as the platform.
+build/runtime:
+	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 -f ./build-utils/docker/dockerfile.runtime \
+		--build-arg EXTEND="$(dev_base_image)" -t "$(dev_runtime_image_name):latest" .
+
+run/runtime:
+	docker run -it --rm -v ~/.aws:/root/.aws --platform linux/amd64 -p 8080:8080 -p 8081:8081 -e GENERATE_UNIQUE=false -e stage=$(stage) "$(dev_runtime_image_name):latest"

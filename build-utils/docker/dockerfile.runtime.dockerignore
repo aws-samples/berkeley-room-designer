@@ -1,0 +1,4 @@
+**node_modules
+build_utils/data/*.csv
+build_utils/data/*.json
+**cdk.out

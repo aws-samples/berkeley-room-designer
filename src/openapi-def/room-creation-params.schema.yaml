@@ -1,0 +1,36 @@
+type: object
+properties:
+  roomDescription:
+    type: object
+    properties:
+      widthInMeters: 
+        type: number
+      depthInMeters:
+        type: number
+      heightInMeters:
+        type: number
+      roomCategory:
+        type: string
+        enum: ['living room', 'dining room', 'family room', 'office', 'bedroom', 'kitchen', 'conference room', 'generic']
+    required:
+      - widthInMeters
+      - depthInMeters
+      - heightInMeters
+      - roomCategory
+  fillTarget:
+    type: number
+  furniturePlacementType:
+    type: string
+    enum: ['llm', 'random', 'autointeriorblog'] 
+  furnitureSelectionType:
+    type: string
+    enum: ['random', 'matching search'] 
+  furnitureSearchSelectionKeywords:
+    type: array
+    items:
+      type: string
+required:
+  - roomDescription
+  - fillTarget
+  - furniturePlacementType
+  - furnitureSelectionType

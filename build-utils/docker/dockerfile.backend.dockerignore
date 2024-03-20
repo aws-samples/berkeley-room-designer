@@ -1,0 +1,42 @@
+# Same as .gitignore.
+**.DS_Store
+
+**node_modules
+
+# ts-npm generates these. 
+package.json
+#package-lock.json
+
+dist*
+
+build-utils/data/listings_*.json
+build-utils/data/*.csv
+build-utils/renders/*.png
+
+src/backend/npm.ts
+src/backend/package.json
+src/backend/package-lock.json
+src/backend/node_modules
+
+**cdk.out
+**cdk.context.json
+
+# More than .gitignore.
+build-utils/**/*dockerfile*
+
+#src/backend
+src/cli
+src/cli.visualizer
+src/dataset-to-sqlite-db
+#src/frontend
+src/infra
+src/tests*
+
+#npm.backend.ts
+npm.cli.ts
+npm.cli.visualizer.ts
+npm.dataset-to-sqlite-db.ts
+npm.frontend.ts
+npm.infra.ts
+npm.tests.ts
+#npm.ts

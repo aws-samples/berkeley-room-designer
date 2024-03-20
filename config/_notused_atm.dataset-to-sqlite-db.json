@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "../dist.dataset-to-sqlite-db",
+    "rootDir": "../",
+    "types": ["node"]
+  },
+  "include": [ 
+    "../src/dataset-to-sqlite-db/**/*.ts",
+    "../src/backend/**/*.ts",
+    "../src/frontend/furniture-placement/**/*.ts",
+    "../src/node-globals.ts"
+  ]
+}

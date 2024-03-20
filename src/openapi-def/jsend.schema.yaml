@@ -1,0 +1,11 @@
+type: object
+properties:
+  status: 
+    type: string
+  message:
+    type: string
+  data:
+    type: object
+required:
+  - status
+  - message

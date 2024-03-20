@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "../dist.backend",
+    "rootDir": "../src",
+    "types": ["node"],
+    "noEmit": true
+  },
+  "include": [
+    "../src/backend/**/*.ts",
+    "../src/frontend/**/*.ts",
+    "../src/node-globals.ts"
+  ]
+}

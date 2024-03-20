@@ -1,0 +1,32 @@
+# This file is responsible for defining the entrypoint of the OpenAPI spec used for:
+# * API Definition
+# * Generating TypeScript types used in backend/frontend
+# * Backend HTTP request routing
+# * Frontend HTTP client generation
+# You can use this tool https://editor.swagger.io/ to help debug api.yaml and generated _api.yaml errors.
+# This YAML has a new keyword, $includes, which lets you more easily reference other YAMLS _in the same directory_. See: https://github.com/tsapporg/openapi-includer-cli/tree/aws-sample
+openapi: '3.0.1'
+
+info:
+  title: 'API'
+  version: '0.0.0'
+
+servers:
+- url: "{apiURL}"
+  variables:
+    apiURL:
+      default: 'http://localhost:8081/api'
+
+paths:
+  $includes:
+    - ./test.paths.yaml
+    - ./room-configurations.paths.yaml
+
+components:
+  schemas:
+    IRoomCreationParams:
+      $includes: 
+        - ./room-creation-params.schema.yaml
+    IRoomConfiguration:
+      $includes: 
+        - ./room-configuration.schema.yaml

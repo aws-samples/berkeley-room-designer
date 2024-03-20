@@ -1,0 +1,65 @@
+# This Dockerfile is responsible for defining an environment for running the room designer. 
+# syntax=docker/dockerfile:1
+ARG EXTEND="public.ecr.aws/docker/library/node:20-bookworm-slim"
+FROM ${EXTEND}
+
+SHELL ["/bin/bash", "-c"]
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV NODE_ENV="development"
+ENV NODE_OPTIONS=--max_old_space_size=2048
+ENV IS_DOCKER="true"
+
+RUN apt-get update -y
+
+RUN apt-get install -y \
+  git \
+  unzip \
+  curl \
+  gnupg \
+  wget \
+  build-essential \
+  jq \
+  libcairo2-dev \
+  libpango1.0-dev \
+  libjpeg-dev \
+  libgif-dev \
+  librsvg2-dev \
+  libnotify4 \
+  libgl1-mesa-dri \
+  libglapi-mesa \
+  libosmesa6 \
+  mesa-utils \
+  xvfb \
+  libwebkit2gtk-4.0-dev \
+  libssl-dev \
+  libgtk-3-dev \
+  libayatana-appindicator3-dev \
+  librsvg2-dev
+
+# jq needs to be on path.
+ENV PATH="$PATH:~/.local/bin/"
+
+RUN npm config set yes true
+
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+  unzip awscliv2.zip && \
+ ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
+
+ENV stage=main
+
+EXPOSE 8080
+
+RUN mkdir -p /opt/app
+
+# See respective dockerignore for what gets included.
+COPY ./ /opt/app/
+
+RUN cd /opt/app && rm -rf node_modules && make setup
+
+RUN npm uninstall -g typescript
+
+COPY ./build-utils/docker/dockerfile.runtime.entrypoint.sh /opt/app/
+RUN cd /opt/app && make node_env=development build
+
+ENTRYPOINT ["/opt/app/dockerfile.runtime.entrypoint.sh"]

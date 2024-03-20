@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "../dist.frontend",
+    "rootDir": "../src",
+    "types": [
+      "node", 
+      "../node_modules/@types/wicg-file-system-access"
+    ], 
+  },
+  "include": [
+    "../src/@types/*.ts",
+    "../src/openapi-def/iface/**/*.ts",
+    "../src/frontend/**/*.ts"
+  ]
+}

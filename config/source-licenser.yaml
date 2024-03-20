@@ -1,0 +1,26 @@
+# This file is responsible for defining what files we want to add a license header to,
+#  along with what license header.
+files:
+  '**/*.ts':
+    header:
+      startBlock: // @license
+      linePrefix: '// '
+      endBlock: '//'
+ignore:
+  - .git
+  - .npm
+  - .vscode
+  - node_modules
+# FIXME These all get ignored because "#! node" interferes somehow.
+  - build-utils/infra/build-script-hashes.ts
+  - build-utils/infra/importify_esbuild_output.cjs
+  - src/backend/infra_local.ts
+  - src/cli/generate-synthetic-room-data.renderer.ts
+  - src/cli/generate-synthetic-room-data.ts
+  - src/dataset-to-sqlite-db/index.ts
+  - src/infra/cdk-apps/backend.ts
+  - src/infra/cdk-apps/base.ts
+  - src/infra/cdk-apps/cicd.ts
+license: |
+  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+  SPDX-License-Identifier: MIT-0

@@ -1,0 +1,44 @@
+# This Dockerfile is responsible for defining an environment for the backend when deployed to AWS Lambda.
+# References:
+# * https://github.com/p-i-/lambda-container-image-with-custom-runtime-example/tree/main/src
+# * https://github.com/fgregg/lambda-github-runner/blob/9804721cb9be8acd9771558864a224533b4adbaf/README.md
+# * https://docs.aws.amazon.com/lambda/latest/dg/images-create.html#runtimes-images-custom
+# * https://github.com/serverless/serverless/discussions/11119
+# * https://docs.aws.amazon.com/lambda/latest/dg/nodejs-image.html#nodejs-image-clients
+# * https://www.ranthebuilder.cloud/post/build-aws-lambda-container-image-with-aws-cdk
+
+# syntax=docker/dockerfile:1
+ARG EXTEND="public.ecr.aws/lambda/provided:al2023.2023.12.29.14"
+FROM ${EXTEND}
+
+# See: https://docs.aws.amazon.com/linux/al2023/ug/package-management.html
+RUN dnf update -y
+RUN dnf install -y gcc-c++ bash jq make awscli wget tar gzip git
+
+ENV NODE_VERSION="20.10.0"
+ENV NVM_DIR="/usr/local/nvm"
+RUN mkdir -p $NVM_DIR && wget -q -O - https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
+ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
+RUN echo "source $NVM_DIR/nvm.sh && \
+    nvm install $NODE_VERSION && \
+    nvm alias default $NODE_VERSION && \
+    nvm use default" | bash
+RUN node --version
+RUN npm --version
+
+SHELL ["/bin/bash", "-c"]
+
+ENV FUNCTION_DIR="/function"
+RUN mkdir -p ${FUNCTION_DIR}
+
+# See respective dockerignore for what gets included.
+COPY . ${FUNCTION_DIR}/
+
+RUN mv ${FUNCTION_DIR}/build-utils/docker/lambda.bootstrap.sh /var/runtime/bootstrap
+RUN mv ${FUNCTION_DIR}/build-utils/docker/lambda.function.backend.sh /var/task/function.sh
+
+# Don't use `make setup` (in order to skip db build).
+RUN cd ${FUNCTION_DIR} && make download-packages-from-github && make install
+
+CMD ["function.sh.handler"]

@@ -1,0 +1,239 @@
+# This file is responsible for defining AWS related developer commands.
+include makefile.inc
+stage := main
+app_location := aws
+node_env := production
+
+# Default to deploy action; synth can be used to test if infra code is somewhat valid and is used for CICD infra scanning.
+# Options: deploy | synth
+cdk_action := deploy
+
+# Enables CloudFormation template scanning.
+# Options: false | true
+cdk_nag := true
+
+# Used to add specific permissions to CICD, but only after after certain Cfn stacks are created.
+self_mutate_pipeline ?= false
+
+deploy/cdk/main:
+# "CDK bootstrap" in configured region.
+	make -f makefile.aws stage=main region="${aws_$(stage)_region}" aws_cli_profile_arg="--profile ${aws_$(stage)_cli_profile}" deploy/cdk
+deploy/cdk:
+	aws cloudformation create-stack \
+		$(aws_cli_profile_arg) \
+		--stack-name "${aws_cfn_prefix}-$(stage)-${aws_cdk_toolkit_cfn_stack_suffix}-${aws_$(stage)_deploy_id}" \
+		--template-body file://$(shell pwd)/config/cdk-bootstrap-cfn-template.yaml \
+		--parameters \
+		ParameterKey=TrustedAccounts,ParameterValue=${aws_$(stage)_account_id} \
+		ParameterKey=TrustedAccountsForLookup,ParameterValue=${aws_$(stage)_account_id} \
+		ParameterKey=CloudFormationExecutionPolicies,ParameterValue=${aws_cdk_policy_arn} \
+		ParameterKey=Qualifier,ParameterValue=${aws_$(stage)_cdk_qualifier} \
+		--capabilities CAPABILITY_NAMED_IAM \
+		--region "$(region)"
+	aws cloudformation wait stack-create-complete \
+		$(aws_cli_profile_arg) \
+		--stack-name "${aws_cfn_prefix}-$(stage)-${aws_cdk_toolkit_cfn_stack_suffix}-${aws_$(stage)_deploy_id}" \
+		--region "$(region)"
+
+deploy/cicd/main:
+# FIXME See CICD stack definition for why it's not getting scanned.
+	make -f makefile.aws stage=main cdk_nag=false aws_cli_profile_arg="--profile ${aws_$(stage)_cli_profile}" self_mutate_pipeline=$(self_mutate_pipeline) deploy/cicd
+deploy/cicd:
+	cd ./src/infra; \
+	npx cdk context --clear; \
+	npx cdk $(cdk_action) -v \
+		--app "node --experimental-specifier-resolution=node --experimental-modules --no-warnings --loader $(ts_exec_ts_node) ./cdk-apps/cicd.ts" \
+		--require-approval never \
+		$(aws_cli_profile_arg) \
+		--context cdk-action=$(cdk_action) \
+		--context cdk-nag=$(cdk_nag) \
+		--context account-id=${aws_$(stage)_account_id} \
+		--context region=${aws_$(stage)_region} \
+		--context stage=$(stage) \
+		--context deploy-id=${aws_$(stage)_deploy_id} \
+		--context self-mutate-pipeline=$(self_mutate_pipeline) \
+		"${aws_cfn_prefix}-$(stage)-${aws_cicd_cfn_stack_suffix}-${aws_$(stage)_deploy_id}";
+
+deploy/from-cicd:
+# No need to install dependencies when synthing locally.
+ifeq ($(cdk_action),deploy)
+	make setup
+endif
+
+	make build/openapi-def
+
+ifeq ($(app_location),aws)
+	cd ${CODEBUILD_SRC_DIR}; make -f makefile.aws src_dir="${CODEBUILD_SRC_DIR}" aws_cfn_prefix=$(aws_cfn_prefix) stage=$(stage) scan/from-cicd
+endif
+
+	make -f makefile.aws cdk_action="$(cdk_action)" stage=$(stage) deploy/base
+
+ifeq ($(cdk_action),deploy)
+# See <berkeley-room-designer-root>/src/infra/lambda.fn.ts for details on why we do this to the .gitignore file.
+	sed -i 's/packages\/\*\*\/\*/ /g' .gitignore
+	sed -i 's/!packages\/gitkeep/ /g' .gitignore
+	cat .gitignore
+endif
+
+	make -f makefile.aws cdk_action="$(cdk_action)" stage=$(stage) deploy/backend
+
+# CICD won't have access to deploy frontend since the website bucket wasn't created when initially deployed.
+# "Self-mutate" adjusts CICD access policies to allow it to deploy (sync) frontend et. al.
+# FIXME See CICD stack definition for why it's not getting scanned.
+	make -f makefile.aws cdk_action="$(cdk_action)" cdk_nag=false stage="$(stage)" self_mutate_pipeline=true deploy/cicd
+
+	make -f makefile.aws cdk_action="$(cdk_action)" stage=$(stage) deploy/frontend
+
+scan/from-cicd:
+#cd $(src_dir); make lint/repo
+	cd $(src_dir); make scan/licenses
+#cd $(src_dir); make scan/source
+	cd $(src_dir); make aws_cfn_prefix=$(aws_cfn_prefix) stage=$(stage) scan/cloudformation-templates
+
+deploy/base/main:
+	make -f makefile.aws stage=main aws_cli_profile_arg="--profile ${aws_$(stage)_cli_profile}" deploy/base
+deploy/base:
+	cd ./src/infra; \
+	npx cdk context --clear; \
+	npx cdk $(cdk_action) -v \
+		--app "node --experimental-specifier-resolution=node --experimental-modules --no-warnings --loader $(ts_exec_ts_node) ./cdk-apps/base.ts" \
+		--require-approval never \
+		$(aws_cli_profile_arg) \
+		--context cdk-action=$(cdk_action) \
+		--context cdk-nag=$(cdk_nag) \
+		--context account-id=${aws_$(stage)_account_id} \
+		--context region=${aws_$(stage)_region} \
+		--context stage=$(stage) \
+		--context deploy-id=${aws_$(stage)_deploy_id} \
+		"${aws_cfn_prefix}-$(stage)-${aws_base_cfn_stack_suffix}-${aws_$(stage)_deploy_id}";
+
+deploy/backend/main:
+# If running this from CodeBuild (CODEBUILD_CI set by CodeBuild), don't supply "--profile <profile>" since even setting "--profile default" breaks auth.
+	if [ "${CODEBUILD_CI}" = true ]; then \
+    make -f makefile.aws stage=main aws_cli_profile_arg="" deploy/backend; \
+  else \
+		make -f makefile.aws stage=main aws_cli_profile_arg="--profile ${aws_$(stage)_cli_profile}" deploy/backend; \
+	fi
+deploy/backend:
+	make -f makefile.aws package/backend
+
+	cd ./src/infra; \
+	npx cdk context --clear; \
+	npx cdk $(cdk_action) -v \
+		--app "node --experimental-specifier-resolution=node --experimental-modules --no-warnings --loader $(ts_exec_ts_node) ./cdk-apps/backend.ts" \
+		--require-approval never \
+		$(aws_cli_profile_arg) \
+		--context cdk-action=$(cdk_action) \
+		--context account-id=${aws_$(stage)_account_id} \
+		--context region=${aws_$(stage)_region} \
+		--context stage=$(stage) \
+		--context deploy-id=${aws_$(stage)_deploy_id} \
+		--context backend-dist-dir=${backend_dist_dir} \
+		"${aws_cfn_prefix}-$(stage)-${aws_backend_cfn_stack_suffix}-${aws_$(stage)_deploy_id}";
+
+package/backend:
+	make node_env=$(node_env) build/backend
+
+deploy/frontend/main:
+# If running this from CodeBuild (CODEBUILD_CI set by CodeBuild), don't supply "--profile <profile>" since even setting "--profile default" breaks auth.
+	if [ "${CODEBUILD_CI}" = true ]; then \
+    make -f makefile.aws stage=main aws_cli_profile_arg="" deploy/frontend; \
+  else \
+		make -f makefile.aws stage=main aws_cli_profile_arg="--profile ${aws_$(stage)_cli_profile}" deploy/frontend; \
+	fi
+deploy/frontend:
+	make -f makefile.aws package/frontend
+
+ifeq ($(cdk_action),deploy)
+	make -f makefile.aws stage=$(stage) aws_cli_profile_arg="$(aws_cli_profile_arg)" upload/website
+endif
+
+package/frontend:
+	make app_location=$(app_location) node_env=$(node_env) build
+
+upload/website:
+	$(eval cfn_export_key := $(shell ./build-utils/infra/aws.strip-dashes.sh "${aws_cfn_prefix}-$(stage)-${aws_backend_website_bucket_name_cfn_export_name_suffix}-${aws_$(stage)_deploy_id}"))
+	@echo "lookup cfn export: $(cfn_export_key)"
+	$(eval website_bucket_name := $(shell aws cloudformation describe-stacks --stack-name "${aws_cfn_prefix}-$(stage)-${aws_backend_cfn_stack_suffix}-${aws_$(stage)_deploy_id}" $(aws_cli_profile_arg) --region "${aws_$(stage)_region}" --query 'Stacks[0].Outputs[?OutputKey==`$(cfn_export_key)`].OutputValue' --output text))
+	@echo "found cfn export website_bucket_name: $(website_bucket_name)"
+
+	$(eval cfn_export_key := $(shell ./build-utils/infra/aws.strip-dashes.sh "${aws_cfn_prefix}-$(stage)-${aws_backend_distribution_id_cfn_export_name_suffix}-${aws_$(stage)_deploy_id}"))
+	@echo "lookup cfn export: $(cfn_export_key)"
+	$(eval distribution_id := $(shell aws cloudformation describe-stacks --stack-name "${aws_cfn_prefix}-$(stage)-${aws_backend_cfn_stack_suffix}-${aws_$(stage)_deploy_id}" $(aws_cli_profile_arg) --region "${aws_$(stage)_region}" --query 'Stacks[0].Outputs[?OutputKey==`$(cfn_export_key)`].OutputValue' --output text))
+	@echo "found cfn export distribution_id: $(distribution_id)"
+
+	aws s3 sync ./${frontend_dist_dir} "s3://${website_bucket_name}" --delete --region "${aws_$(stage)_region}" $(aws_cli_profile_arg)
+	aws cloudfront create-invalidation --distribution-id ${distribution_id} --paths "/*" --region "${aws_$(stage)_region}" $(aws_cli_profile_arg)
+
+start/cicd/main:
+	make -f makefile.aws stage=main aws_cli_profile_arg="--profile ${aws_$(stage)_cli_profile}" start/cicd
+start/cicd:
+# CloudFormation will automatically remove dashes from exports, so make sure our export keys have them removed to.
+	$(eval cfn_export_key := $(shell ./build-utils/infra/aws.strip-dashes.sh "${aws_cfn_prefix}-$(stage)-${aws_cicd_source_code_bucket_name_cfn_export_name_suffix}-${aws_$(stage)_deploy_id}"))
+	@echo $(cfn_export_key)
+	$(eval aws_cicd_source_code_bucket_name := $(shell aws cloudformation describe-stacks --stack-name "${aws_cfn_prefix}-$(stage)-${aws_cicd_cfn_stack_suffix}-${aws_$(stage)_deploy_id}" $(aws_cli_profile_arg) --region "${aws_$(stage)_region}" --query 'Stacks[0].Outputs[?OutputKey==`${cfn_export_key}`].OutputValue' --output text))
+	make -f makefile.aws stage=$(stage) aws_cli_profile_arg="$(aws_cli_profile_arg)" s3_bucket=$(aws_cicd_source_code_bucket_name) zip-and-upload-source
+zip-and-upload-source:
+	rm -f ../source-code.zip || true
+	./build-utils/infra/aws.zip-but-ignore-gitignored.sh
+	aws s3 cp ../source-code.zip s3://$(s3_bucket) --region ${aws_$(stage)_region} $(aws_cli_profile_arg)
+	rm -f ../source-code.zip || true
+
+open-website/main:
+	make -f makefile.aws stage=main aws_cli_profile_arg="--profile ${aws_$(stage)_cli_profile}" open-website
+open-website:
+	$(eval cfn_export_key := $(shell ./build-utils/infra/aws.strip-dashes.sh "${aws_cfn_prefix}-$(stage)-${aws_backend_app_url_cfn_export_name_suffix}-${aws_$(stage)_deploy_id}"))
+	@echo "lookup cfn export: $(cfn_export_key)"
+	$(eval app_url := $(shell aws cloudformation describe-stacks --stack-name "${aws_cfn_prefix}-$(stage)-${aws_backend_cfn_stack_suffix}-${aws_$(stage)_deploy_id}" $(aws_cli_profile_arg) --region "${aws_$(stage)_region}" --query 'Stacks[0].Outputs[?OutputKey==`$(cfn_export_key)`].OutputValue' --output text))
+	@echo "found cfn export app_url: $(app_url)"
+	open -a "Firefox" "https://$(app_url)" --args '--new-window'
+
+destroy/main:
+	make -f makefile.aws stage=main aws_cli_profile_arg="--profile ${aws_$(stage)_cli_profile}" destroy
+destroy:
+# The CDK doesn't reliably empty buckets, so we'll need to do that first before deleting resources.
+# Before we do that, disable CloudTrail logging, otherwise accessing buckets will generate more log entries in the buckets.
+	$(eval cfn_export_key := $(shell ./build-utils/infra/aws.strip-dashes.sh "${aws_cfn_prefix}-$(stage)-${aws_base_cloudtrail_arn_cfn_export_name_suffix}-${aws_$(stage)_deploy_id}"))
+	@echo "lookup cfn export: $(cfn_export_key)"
+	$(eval cloudtrail_arn := $(shell aws cloudformation describe-stacks --stack-name "${aws_cfn_prefix}-$(stage)-${aws_base_cfn_stack_suffix}-${aws_$(stage)_deploy_id}" $(aws_cli_profile_arg) --region "${aws_$(stage)_region}" --query 'Stacks[0].Outputs[?OutputKey==`$(cfn_export_key)`].OutputValue' --output text))
+	@echo "found cfn export cloudtrail_arn: $(cloudtrail_arn)"
+
+	aws cloudtrail stop-logging --name $(cloudtrail_arn) $(aws_cli_profile_arg) --region "${aws_$(stage)_region}" || echo "stop-logging failed"
+
+	make -f makefile.aws stage="$(stage)" aws_cli_profile_arg="$(aws_cli_profile_arg)" destroy/s3-buckets
+
+# The CDK doesn't empty ECR repos, so we'll need to do that first before deleting resources.
+	make -f makefile.aws stage="$(stage)" aws_cli_profile_arg="$(aws_cli_profile_arg)" destroy/ecr-repos
+
+	make -f makefile.aws delete-cfn-stack stage=$(stage) aws_cli_profile_arg="$(aws_cli_profile_arg)" cfn_stack_suffix=${aws_cicd_cfn_stack_suffix}
+	make -f makefile.aws delete-cfn-stack stage=$(stage) aws_cli_profile_arg="$(aws_cli_profile_arg)" cfn_stack_suffix=${aws_frontend_cfn_stack_suffix}
+	make -f makefile.aws delete-cfn-stack stage=$(stage) aws_cli_profile_arg="$(aws_cli_profile_arg)" cfn_stack_suffix=${aws_backend_cfn_stack_suffix}
+	make -f makefile.aws delete-cfn-stack stage=$(stage) aws_cli_profile_arg="$(aws_cli_profile_arg)" cfn_stack_suffix=${aws_base_cfn_stack_suffix}
+	make -f makefile.aws delete-cfn-stack stage=$(stage) aws_cli_profile_arg="$(aws_cli_profile_arg)" cfn_stack_suffix=${aws_cdk_toolkit_cfn_stack_suffix}
+
+destroy/s3-buckets:
+# Created by CICD:
+	./build-utils/infra/aws.try-empty-s3-bucket.sh "${aws_cfn_prefix}" "$(stage)" "${aws_$(stage)_deploy_id}" "${aws_cicd_cfn_stack_suffix}" "${aws_cicd_source_code_bucket_name_cfn_export_name_suffix}" "null" "${aws_$(stage)_region}" "$(aws_cli_profile_arg)" || echo "bucket delete failed"
+	./build-utils/infra/aws.try-empty-s3-bucket.sh "${aws_cfn_prefix}" "$(stage)" "${aws_$(stage)_deploy_id}" "${aws_cicd_cfn_stack_suffix}" "${aws_cicd_artifacts_bucket_name_cfn_export_name_suffix}" "null" "${aws_$(stage)_region}" "$(aws_cli_profile_arg)" || echo "bucket delete failed"
+
+# Created by base:
+	./build-utils/infra/aws.try-empty-s3-bucket.sh "${aws_cfn_prefix}" "$(stage)" "${aws_$(stage)_deploy_id}" "${aws_base_cfn_stack_suffix}" "${aws_base_cloudtrail_bucket_name_cfn_export_name_suffix}" "null" "${aws_$(stage)_region}" "$(aws_cli_profile_arg)" || echo "bucket delete failed"
+
+# Created by backend:
+	./build-utils/infra/aws.try-empty-s3-bucket.sh "${aws_cfn_prefix}" "$(stage)" "${aws_$(stage)_deploy_id}" "${aws_backend_cfn_stack_suffix}" "${aws_backend_cloudfront_access_logs_bucket_name_cfn_export_name_suffix}" "null" "${aws_$(stage)_region}" "$(aws_cli_profile_arg)" || echo "bucket delete failed"
+	./build-utils/infra/aws.try-empty-s3-bucket.sh "${aws_cfn_prefix}" "$(stage)" "${aws_$(stage)_deploy_id}" "${aws_backend_cfn_stack_suffix}" "${aws_backend_website_bucket_name_cfn_export_name_suffix}" "null" "${aws_$(stage)_region}" "$(aws_cli_profile_arg)" || echo "bucket delete failed"
+
+# Created by CDK:
+	./build-utils/infra/aws.try-empty-s3-bucket.sh "${aws_cfn_prefix}" "$(stage)" "${aws_$(stage)_deploy_id}" "${aws_cdk_toolkit_cfn_stack_suffix}" "BucketName" "true" "${aws_$(stage)_region}" "$(aws_cli_profile_arg)" || echo "bucket delete failed"
+
+destroy/ecr-repos:
+# Created by CDK:
+	./build-utils/infra/aws.try-empty-ecr-repo.sh "${aws_cfn_prefix}" "$(stage)" "${aws_$(stage)_deploy_id}" "${aws_cdk_toolkit_cfn_stack_suffix}" "ImageRepositoryName" "true" "${aws_$(stage)_region}" "$(aws_cli_profile_arg)" || echo "repo delete failed"
+
+delete-cfn-stack:
+	./build-utils/infra/aws.try-delete-cfn-stack.sh "${aws_cfn_prefix}" "$(stage)" "$(cfn_stack_suffix)" "${aws_$(stage)_deploy_id}" "${aws_$(stage)_region}" "$(aws_cli_profile_arg)"
+
+clean/infra:
+	npx shx rm -f ./cdk.context.json
+	npx shx rm -f ./src/infra/cdk.context.json
+	npx shx rm -rf ./src/infra/cdk.out
