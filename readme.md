@@ -1,5 +1,5 @@
 # Berkeley Room Designer
-This software provides a (web-based and CLI) room designer which utilizes and collates furnishings from the [Amazon Berkeley Objects Dataset](https://amazon-berkeley-objects.s3.amazonaws.com/index.html#aws) and is primarily intended to be a sample for working with it.
+This software provides a (web-based and CLI) room designer which utilizes and collates furnishings from the [Amazon Berkeley Objects Dataset](https://amazon-berkeley-objects.s3.amazonaws.com/index.html) and is primarily intended to be a sample for working with it.
 
 ----
 
