@@ -1,11 +1,11 @@
 # Berkeley Room Designer
-This software provides a (web-based and CLI) room designer which utilizes and collates furnishings from the [Amazon Berkeley dataset](https://amazon-berkeley-objects.s3.amazonaws.com/index.html#aws) and is primarily intended to be a sample for working with it.
+This software provides a (web-based and CLI) room designer which utilizes and collates furnishings from the [Amazon Berkeley Objects Dataset](https://amazon-berkeley-objects.s3.amazonaws.com/index.html#aws) and is primarily intended to be a sample for working with it.
 
 ----
 
 With this software, you can:
 * Generate room configurations in the browser or via CLI using assorted algorithms: prompt-based via LLM, random, autointeriorblog
-* Manually create room configurations in 3D - furniture et. al. placed in a room - using listings from the Amazon Berkeley dataset
+* Manually create room configurations in 3D - furniture et. al. placed in a room - using listings from the Amazon Berkeley Objects Dataset
 * Import room configurations - YAML from disk - for editing, or export room configurations - save YAML to disk/browser
 * Preview saved room configurations in the browser
 * Debug generated room configuration algorithms from the CLI using a desktop GUI
